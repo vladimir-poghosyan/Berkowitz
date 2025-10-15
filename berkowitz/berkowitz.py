@@ -32,10 +32,7 @@ def __mat_mul(a: Matrix, b: Matrix, sign: int = 1) -> Matrix:
     ]
 
 
-def __toeplitz_matrix(
-    A: Matrix,
-    n: int,
-) -> Matrix:
+def __toeplitz_matrix(A: Matrix, n: int) -> Matrix:
     """ Compute Toeplitz matrix
 
     Parameters
