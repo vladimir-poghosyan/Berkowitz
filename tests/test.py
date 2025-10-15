@@ -9,7 +9,7 @@ MAX_WORKERS: int = 4
 
 
 def test_numeric_matrix() -> None:
-    for n in range(1, 100):
+    for n in range(101):
         matrix = [[randint(-10000, 10000) for j in range(n)] for i in range(n)]
         berkowitz_vectors = berkowitz(matrix)
 
