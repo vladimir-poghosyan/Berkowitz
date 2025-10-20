@@ -1,9 +1,4 @@
-from concurrent.futures import (
-    ProcessPoolExecutor,
-    ThreadPoolExecutor,
-    as_completed,
-)
-
+from concurrent import futures
 from typing import Final, Literal
 
 
@@ -12,8 +7,13 @@ type Matrix = list[list[Number]]
 
 
 WORKER_CLASSES: Final[dict] = {
-    'thread': ThreadPoolExecutor,
-    'process': ProcessPoolExecutor,
+    'interpreter': getattr(
+        futures,
+        'InterpreterPoolExecutor',
+        None
+    ),  # requires Python>=3.14
+    'process': futures.ProcessPoolExecutor,
+    'thread': futures.ThreadPoolExecutor,
 }
 
 
@@ -74,7 +74,7 @@ def __toeplitz_matrix(A: Matrix, n: int) -> Matrix:
 def berkowitz(
     matrix: Matrix,
     workers: int = 1,
-    worker_class: Literal['thread', 'process'] = 'thread'
+    worker_class: Literal['interpreter', 'process', 'thread'] = 'thread'
 ) -> tuple[tuple[Number]]:
     """Compute the characteristic polynomial of a square matrix using
     Berkowitz's algorithm.
@@ -87,7 +87,7 @@ def berkowitz(
     matrix : Matrix
     workers : int
         Number of parallel workers to use (defaults to 1)
-    worker_class : Literal['thread', 'process']
+    worker_class : Literal['interpreter', 'process', 'thread']
         Type of workers to use, either threads or processes
 
     Returns
@@ -105,6 +105,11 @@ def berkowitz(
 
     if worker_class not in WORKER_CLASSES:
         raise ValueError(f'Invalid worker class "{worker_class}"')
+
+    if WORKER_CLASSES[worker_class] is None:
+        raise NotImplementedError(
+            f'"{worker_class}" workers are not supported'
+        )
 
     berk = ((1,),)
 
@@ -134,7 +139,7 @@ def berkowitz(
             transforms[n - 2] = __toeplitz_matrix(A, n)
     else:
         with WORKER_CLASSES[worker_class](max_workers=workers) as executor:
-            for future in as_completed(
+            for future in futures.as_completed(
                 executor.submit(__toeplitz_matrix, A, n)
                 for n in range(N, 1, -1)
             ):
